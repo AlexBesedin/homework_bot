@@ -1,14 +1,14 @@
+import logging
 import os
 import sys
 import time
 from http import HTTPStatus
+
 import requests
-import logging
 import telegram
 from dotenv import load_dotenv
 
 import exceptions
-from tests.conftest import BASE_DIR
 
 load_dotenv()
 
@@ -80,18 +80,14 @@ def get_api_answer(timestamp):
 def check_response(response):
     """Проверка ответа API на корректность."""
     logging.debug('Начало проверки')
-    try:
-        homework = response['homeworks']
-    except KeyError as error:
-        logging.error(
-            f'Ошибка доступа по ключу homeworks {error}'
-        )
-    if not isinstance(homework, list):
-        logging.error('homework не список')
-        raise TypeError(
-            'В списке домашних работ неверный тип данных'
-        )
-    return homework
+    if not isinstance(response, dict):
+        raise TypeError('Несоответствие типа ответа API')
+    if 'homeworks' not in response or 'current_date' not in response:
+        raise exceptions.EmptyResponseFromAPI('Пустой ответ от API')
+    homeworks = response.get('homeworks')
+    if not isinstance(homeworks, list):
+        raise TypeError('Homeworks не является списком')
+    return homeworks
 
 
 def parse_status(homework):
@@ -113,13 +109,14 @@ def parse_status(homework):
 
 def main():
     """Основная логика работы бота."""
-    bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    timestamp = int(time.time())
     if not check_tokens():
         logging.critical(
             'Отсутствие обязательных переменных окружения'
         )
         sys.exit('Бот завершил работу')
+
+    bot = telegram.Bot(token=TELEGRAM_TOKEN)
+    timestamp = int(time.time())
 
     while True:
         try:
@@ -144,10 +141,10 @@ if __name__ == '__main__':
     logging.basicConfig(
         level=logging.INFO,
         filename='homework.log',
-        format='%(asctime)s, %(levelname)s, %(message)s'
+        format='%(asctime)s, %(levelname)s, %(message)s, %(funcName)s, %(lineno)d'
     )
     handler = (
-        logging.FileHandler(f'{BASE_DIR}/output.log'),
+        logging.FileHandler('output.log'),
         logging.StreamHandler(sys.stdout)
     )
     main()
