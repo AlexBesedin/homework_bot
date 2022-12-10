@@ -141,7 +141,8 @@ if __name__ == '__main__':
     logging.basicConfig(
         level=logging.INFO,
         filename='homework.log',
-        format='%(asctime)s, %(levelname)s, %(message)s, %(funcName)s, %(lineno)d'
+        format='%(asctime)s, %(levelname)s, '
+               '%(message)s, %(funcName)s, %(lineno)d'
     )
     handler = (
         logging.FileHandler('output.log'),
